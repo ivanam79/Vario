@@ -155,16 +155,18 @@ $v.value = function (initialValue) {
         if (arguments.length == 0) {
             // Read value
             return valueAccessor.currentValue;
-        } else {
+        } else if (arguments.length == 1) {
             // Invoke listeners
             for (var i = 0; i < valueAccessor.listeners.length; i++) {
-                if (!valueAccessor.listeners[i]($v.VALUE_CHANGED, arguments[0], valueAccessor.currentValue)) {
+                if (valueAccessor.listeners[i](arguments[0], valueAccessor.currentValue, $v.VALUE_CHANGED) === false) {
                     // Updating value is canceled
                     return;
                 }
             }
             // Write value
             valueAccessor.currentValue = arguments[0];
+        } else {
+            throw "$v.ValueAccessor() requires 0 or 1 arguments";
         }
     });
 
@@ -201,9 +203,45 @@ $v.array = function (initialValue) {
      * @class $v.ArrayAccessor
      * @extends $v.Accessor
      */
+    if(!initialValue) {
+        initialValue = []; // Default empty
+    }
     var arrayAccessor = $v.createAccessor(initialValue, function () {
-
+        if(arguments.length == 1) {
+            if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+                throw "Array element " + arguments[0] + " doesn't exist";
+            } else {
+                return arrayAccessor.currentValue[arguments[0]];
+            }
+        } else if(arguments.length == 2) {
+            if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+                throw "Array element " + arguments[0] + " doesn't exist";
+            } else {
+                // Invoke listeners
+                for (var i = 0; i < arrayAccessor.listeners.length; i++) {
+                    if (arrayAccessor.listeners[i](arguments[1], arrayAccessor.currentValue[arguments[0]], $v.COLLECTION_ITEM_CHANGED, arguments[0]) === false) {
+                        // Updating value is canceled
+                        return;
+                    }
+                }
+                // Write value                
+                arrayAccessor.currentValue[arguments[0]] = arguments[1];
+            }            
+        } else {
+            throw "$v.ArrayAccessor() requires 1 or 2 arguments";
+        }
     });
+    
+    /**
+     * Returns items count
+     * 
+     * @method count
+     * @returns {int} items count
+     */
+    arrayAccessor.count = function () {
+        return arrayAccessor.currentValue.length;
+    };
+    
     /**
      * Appends a new item
      * 
@@ -211,18 +249,32 @@ $v.array = function (initialValue) {
      * @param {Mixed} item
      */
     arrayAccessor.add = function (item) {
-        // TODO
+        // Invoke listeners
+        for (var i = 0; i < arrayAccessor.listeners.length; i++) {
+            if (arrayAccessor.listeners[i](item, null, $v.COLLECTION_ITEM_ADDED, arrayAccessor.currentValue.length) === false) {
+                // Updating value is canceled
+                return;
+            }
+        }
+        arrayAccessor.currentValue.push(item);
     };
 
     /**
      * Inserts new item at specified position
      * 
      * @method insert
-     * @param {Mixed} item
      * @param {int} index
+     * @param {Mixed} item
      */
-    arrayAccessor.insert = function (item, index) {
-        // TODO
+    arrayAccessor.insert = function (index, item) {
+        // Invoke listeners
+        for (var i = 0; i < arrayAccessor.listeners.length; i++) {
+            if (arrayAccessor.listeners[i](item, null, $v.COLLECTION_ITEM_ADDED, index) === false) {
+                // Updating value is canceled
+                return;
+            }
+        }
+        arrayAccessor.currentValue.splice(index, 0, item);
     };
 
     /**
@@ -232,7 +284,18 @@ $v.array = function (initialValue) {
      * @param {int} index
      */
     arrayAccessor.remove = function (index) {
-        // TODO
+        if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+            throw "Array element " + arguments[0] + " doesn't exist";
+        } else {
+            // Invoke listeners
+            for (var i = 0; i < arrayAccessor.listeners.length; i++) {
+                if (arrayAccessor.listeners[i](null, arrayAccessor.currentValue[index], $v.COLLECTION_ITEM_REMOVED, index) === false) {
+                    // Updating value is canceled
+                    return;
+                }
+            }
+            arrayAccessor.currentValue.splice(index, 1);
+        }                
     };
 
     return arrayAccessor;

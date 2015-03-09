@@ -203,18 +203,18 @@ $v.array = function (initialValue) {
      * @class $v.ArrayAccessor
      * @extends $v.Accessor
      */
-    if(!initialValue) {
+    if (!initialValue) {
         initialValue = []; // Default empty
     }
     var arrayAccessor = $v.createAccessor(initialValue, function () {
-        if(arguments.length == 1) {
-            if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+        if (arguments.length == 1) {
+            if ((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
                 throw "Array element " + arguments[0] + " doesn't exist";
             } else {
                 return arrayAccessor.currentValue[arguments[0]];
             }
-        } else if(arguments.length == 2) {
-            if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+        } else if (arguments.length == 2) {
+            if ((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
                 throw "Array element " + arguments[0] + " doesn't exist";
             } else {
                 // Invoke listeners
@@ -226,12 +226,12 @@ $v.array = function (initialValue) {
                 }
                 // Write value                
                 arrayAccessor.currentValue[arguments[0]] = arguments[1];
-            }            
+            }
         } else {
             throw "$v.ArrayAccessor() requires 1 or 2 arguments";
         }
     });
-    
+
     /**
      * Returns items count
      * 
@@ -241,7 +241,7 @@ $v.array = function (initialValue) {
     arrayAccessor.count = function () {
         return arrayAccessor.currentValue.length;
     };
-    
+
     /**
      * Appends a new item
      * 
@@ -284,7 +284,7 @@ $v.array = function (initialValue) {
      * @param {int} index
      */
     arrayAccessor.remove = function (index) {
-        if((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
+        if ((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
             throw "Array element " + arguments[0] + " doesn't exist";
         } else {
             // Invoke listeners
@@ -295,7 +295,7 @@ $v.array = function (initialValue) {
                 }
             }
             arrayAccessor.currentValue.splice(index, 1);
-        }                
+        }
     };
 
     return arrayAccessor;

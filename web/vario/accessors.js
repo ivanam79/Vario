@@ -321,5 +321,82 @@ $v.array = function (initialValue) {
  * @for $v
  */
 $v.hashMap = function (initialValue) {
-    // TODO
+    /**
+     * Implementation of the HashMapAccessor class
+     * 
+     * @class $v.HashMapAccessor
+     * @extends $v.Accessor
+     */
+    if (!initialValue) {
+        initialValue = {}; // Default empty
+    }
+    var hashMapAccessor = $v.createAccessor(initialValue, function () {
+        if (arguments.length == 1) {
+            if ((typeof hashMapAccessor.currentValue[arguments[0]]) == "undefined") {
+                throw "HashMap element " + arguments[0] + " doesn't exist";
+            } else {
+                return hashMapAccessor.currentValue[arguments[0]];
+            }
+        } else if (arguments.length == 2) {
+            // Invoke listeners
+            for (var i = 0; i < hashMapAccessor.listeners.length; i++) {
+                if (hashMapAccessor.listeners[i](
+                    arguments[1],
+                    (hashMapAccessor.hasKey(arguments[0]) ? hashMapAccessor.currentValue[arguments[0]] : null),
+                    (hashMapAccessor.hasKey(arguments[0]) ? $v.COLLECTION_ITEM_CHANGED : $v.COLLECTION_ITEM_ADDED),
+                    arguments[0]
+                ) === false) {
+                    // Updating value is canceled
+                    return;
+                }
+            }
+            // Write value                
+            hashMapAccessor.currentValue[arguments[0]] = arguments[1];
+        } else {
+            throw "$v.HashMapAccessor() requires 1 or 2 arguments";
+        }
+    });
+
+    /**
+     * Checks if hash map contains key
+     * 
+     * @method hasKey
+     * @param {Mixed} key
+     * @returns {bool}
+     */
+    hashMapAccessor.hasKey = function (key) {
+        return hashMapAccessor.currentValue.hasOwnProperty(key);
+    };
+
+    /**
+     * Returns an array of hash map's keys
+     * 
+     * @method getKeys
+     * @returns {Array}
+     */
+    hashMapAccessor.getKeys = function () {
+        return Object.keys(hashMapAccessor.currentValue);
+    };
+
+    /**
+     * Removes hash map item
+     * 
+     * @method remove
+     * @param {Mixed} key
+     */
+    hashMapAccessor.remove = function (key) {
+        if (!hashMapAccessor.hasKey(key)) {
+            throw "HashMap element " + key + " doesn't exist";
+        }
+        // Invoke listeners
+        for (var i = 0; i < hashMapAccessor.listeners.length; i++) {
+            if (hashMapAccessor.listeners[i](null, hashMapAccessor.currentValue[key], $v.COLLECTION_ITEM_REMOVED, key) === false) {
+                // Updating value is canceled
+                return;
+            }
+        }
+        delete hashMapAccessor.currentValue[key];
+    };
+
+    return hashMapAccessor;
 };

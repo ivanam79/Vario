@@ -171,14 +171,89 @@ var tests = {
         arr2.remove(1);
         arr2(0, "i4");
         if (
-                (arr2.count() != 3) ||
-                (arr2(0) != "i1") ||
-                (arr2(1) != "i2") ||
-                (arr2(2) != "i3")
-                ) {
+            (arr2.count() != 3) ||
+            (arr2(0) != "i1") ||
+            (arr2(1) != "i2") ||
+            (arr2(2) != "i3")
+        ) {
             errors.push("arr2 unexpected end result");
         }
 
+        return errors;
+    },
+    HashMapAccessorTest: function () {
+        var errors = [];
+        var h1 = $v.hashMap();
+        h1("key1", "value1");
+        if(h1("key1") != "value1") 
+            errors.push("h1 unexpected first element value");
+        if(!h1.hasKey("key1"))
+            errors.push("h1 unexpected first element key");
+        h1("key1", "value11");
+        if(h1("key1") != "value11") 
+            errors.push("h1 updating value");
+        
+        var addCaptured = false;
+        var changeCaptured = false;
+        var removeCaptured = false;
+        h1.listen(function (newValue, oldValue, changeType, collectionKey) {
+            if (changeType == $v.COLLECTION_ITEM_ADDED) {
+                addCaptured = true;
+                if (newValue != "value2")
+                    errors.push("h1 COLLECTION_ITEM_ADDED listener newValue incorrect");
+                if (oldValue != null)
+                    errors.push("h1 COLLECTION_ITEM_ADDED listener oldValue incorrect");
+                if (collectionKey != "key2")
+                    errors.push("h1 COLLECTION_ITEM_ADDED listener collectionKey incorrect");
+            } else if (changeType == $v.COLLECTION_ITEM_CHANGED) {
+                changeCaptured = true;
+                if (newValue != "value22")
+                    errors.push("h1 COLLECTION_ITEM_CHANGED listener newValue incorrect");
+                if (oldValue != "value2")
+                    errors.push("h1 COLLECTION_ITEM_CHANGED listener oldValue incorrect");
+                if (collectionKey !== "key2")
+                    errors.push("h1 COLLECTION_ITEM_CHANGED listener collectionKey incorrect");
+            } else if (changeType == $v.COLLECTION_ITEM_REMOVED) {
+                removeCaptured = true;
+                if (newValue != null)
+                    errors.push("h1 COLLECTION_ITEM_REMOVED listener newValue incorrect");
+                if (oldValue != "value11")
+                    errors.push("h1 COLLECTION_ITEM_REMOVED listener oldValue incorrect");
+                if (collectionKey !== "key1")
+                    errors.push("h1 COLLECTION_ITEM_REMOVED listener collectionKey incorrect");
+            }
+        });
+        
+        h1("key2", "value2");
+        if (!addCaptured)
+            errors.push("h1 COLLECTION_ITEM_ADDED listener didn't execute");
+        h1("key2", "value22");
+        if (!changeCaptured)
+            errors.push("h1 COLLECTION_ITEM_CHANGED listener didn't execute");
+        h1.remove("key1");
+        if (!removeCaptured)
+            errors.push("h1 COLLECTION_ITEM_REMOVED listener didn't execute");
+        if ((h1.getKeys().length != 1) || (h1.getKeys()[0] != "key2") || (h1("key2") != "value22"))
+            errors.push("h1 unexpected end result");
+
+        // Test cancel
+        var h2 = $v.hashMap({key_1: "value_1"});
+        h2.listen(function() {
+            return false;
+        });
+        
+        h2("key2", "value222");
+        if ((h2.getKeys().length != 1) || (h2.getKeys()[0] != "key_1") || (h2("key_1") != "value_1"))
+            errors.push("h2 update not canceled");
+        
+        h2("key3", "value33");
+        if ((h2.getKeys().length != 1) || (h2.getKeys()[0] != "key_1") || (h2("key_1") != "value_1"))
+            errors.push("h2 add not canceled");
+        
+        h2.remove("key_1");
+        if ((h2.getKeys().length != 1) || (h2.getKeys()[0] != "key_1") || (h2("key_1") != "value_1"))
+            errors.push("h2 remove not canceled");
+        
         return errors;
     }
 };

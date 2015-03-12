@@ -1,0 +1,1 @@
+node ..\tools\tc.js testTemplate.html testTemplate.js

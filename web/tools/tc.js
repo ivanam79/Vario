@@ -28,6 +28,7 @@
 var fs = require("fs");
 var vm = require("vm");
 var jsdom = require("jsdom").jsdom;
+var beautify = require('js-beautify').js_beautify;
 
 /*var console = {
     log: function(data) {
@@ -57,5 +58,10 @@ var doc = jsdom("<html><head></head><body>" + html + "</body></html>");
 
 //console.log(doc.body.childNodes[0].tagName);
 $v.templateCompiler.doc = doc;
-$v.templateCompiler.emitJavaScriptForNode(doc.body, 0, false, 1);
+$v.templateCompiler.emitJavaScriptForNode(doc.body, 0, true, 1);
+
+for(var i=0; i<$v.templateCompiler.currentBlockCleanupFunctions.length; i++) {
+    $v.templateCompiler.currentBlockCleanupFunctions[i]();
+}
+
 console.log($v.templateCompiler.generatedJavaScript[0]);

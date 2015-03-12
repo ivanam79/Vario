@@ -25,6 +25,8 @@
  */
 
 $v.templateCompiler = {
+    components: [],
+    currentBlockCleanupFunctions: [],
     generatedJavaScript: [""],
     doc: null,
     
@@ -51,6 +53,14 @@ $v.templateCompiler = {
         return ret;
     },
 
+    emitJavaScriptFunctionBody: function(f, scriptIndex) {
+        var scriptLines = f.toString().split("\n");
+        // Scipping first and last line
+        for(var i=1;i<scriptLines.length-1;i++) {
+            $v.templateCompiler.generatedJavaScript[scriptIndex] += scriptLines[i] + "\n";
+        }
+    },
+    
     emitJavaScriptCode: function(code, scriptIndex) {
         var e = $v.templateCompiler.doc.createElement('div');
         e.innerHTML = code;
@@ -65,16 +75,19 @@ $v.templateCompiler = {
             // Text node
             $v.templateCompiler.generatedJavaScript[newScriptIndex] += $v.templateCompiler.generateIndent(indent);
             if(node.textContent) {
-                if(useInnerHTML) {
-                    $v.templateCompiler.generatedJavaScript[newScriptIndex] += 
-                        "ret+=\"" + 
-                        $v.templateCompiler.escapeJSString(node.textContent) + 
-                        "\";\n";
-                } else {
-                    $v.templateCompiler.generatedJavaScript[newScriptIndex] += 
-                        "$v.dom.createTextNode(parent, \"" + 
-                        $v.templateCompiler.escapeJSString(node.textContent) + 
-                        "\");\n";
+                var textContent = node.textContent.trim();
+                if(textContent) {
+                    if(useInnerHTML) {
+                        $v.templateCompiler.generatedJavaScript[newScriptIndex] += 
+                            "ret+=\"" + 
+                            $v.templateCompiler.escapeJSString(textContent) + 
+                            "\";\n";
+                    } else {
+                        $v.templateCompiler.generatedJavaScript[newScriptIndex] += 
+                            "$v.dom.createTextNode(parent, \"" + 
+                            $v.templateCompiler.escapeJSString(textContent) + 
+                            "\");\n";
+                    }
                 }
             }
         } else {
@@ -93,7 +106,7 @@ $v.templateCompiler = {
                             useInnerHTML: useInnerHTML,
                             console: console
                         });
-                        return;
+                        return; // There should be a flag indicating if child elements should be parsed
                     }
                     // check if template exists and include it
 
@@ -106,5 +119,8 @@ $v.templateCompiler = {
                 $v.templateCompiler.emitJavaScriptForNode(node.childNodes[i], scriptIndex, useInnerHTML, indent);
             }
         }
+        /*for(var i=0; i<$v.templateCompiler.currentBlockCleanupFunctions.length; i++) {
+            $v.templateCompiler.currentBlockCleanupFunctions[i]();
+        }*/
     }
  };

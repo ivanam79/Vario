@@ -61,13 +61,39 @@ $v.COLLECTION_ITEM_REMOVED = 2;
 /** 
  * A constant indicating an item in a collection has changed
  * 
- * @property COLLECTION_ITEM_REMOVED
+ * @property COLLECTION_ITEM_CHANGED
  * @public 
  * @static
  * @final
  * @type int 
  */
 $v.COLLECTION_ITEM_CHANGED = 3;
+
+$v.AccessorMonitors = {
+    monitors: [],
+    add: function(monitor) {
+        // Check if already added
+        for(var i=0;i<$v.AccessorMonitors.monitors.length;i++) {
+            if($v.AccessorMonitors.monitors[i] == monitor) return;
+        }
+        $v.AccessorMonitors.monitors.push(monitor);
+    },
+    remove: function(monitor) {
+        for(var i=0;i<$v.AccessorMonitors.monitors.length;i++) {
+            if($v.AccessorMonitors.monitors[i] == monitor) {
+               $v.AccessorMonitors.monitors.splice(i, 1);
+               return;
+            }
+        }
+    },
+    invoke: function(accessor) {
+        for(var i=0;i<$v.AccessorMonitors.monitors.length;i++) {
+            $v.AccessorMonitors.monitors[i](accessor);
+        }
+    }
+};
+
+$v.currentAccessorId = 1;
 
 /**
  * Creates an accessor with initial value and a function which handles modifying and retrieving the underlying data
@@ -86,8 +112,11 @@ $v.createAccessor = function (initialValue, accessorFunction) {
      * @class $v.Accessor
      */
     var accessor = function () {
+        $v.AccessorMonitors.invoke(accessor);
         return accessorFunction.apply(this, arguments);
     }
+
+    accessor.id = "_" + ($v.currentAccessorId++);
 
     /**
      * Current value
@@ -239,6 +268,7 @@ $v.array = function (initialValue) {
      * @returns {int} items count
      */
     arrayAccessor.count = function () {
+        $v.AccessorMonitors.invoke(arrayAccessor);
         return arrayAccessor.currentValue.length;
     };
 
@@ -249,6 +279,7 @@ $v.array = function (initialValue) {
      * @param {Mixed} item
      */
     arrayAccessor.add = function (item) {
+        $v.AccessorMonitors.invoke(arrayAccessor);
         // Invoke listeners
         for (var i = 0; i < arrayAccessor.listeners.length; i++) {
             if (arrayAccessor.listeners[i](item, null, $v.COLLECTION_ITEM_ADDED, arrayAccessor.currentValue.length) === false) {
@@ -267,6 +298,7 @@ $v.array = function (initialValue) {
      * @param {Mixed} item
      */
     arrayAccessor.insert = function (index, item) {
+        $v.AccessorMonitors.invoke(arrayAccessor);
         // Invoke listeners
         for (var i = 0; i < arrayAccessor.listeners.length; i++) {
             if (arrayAccessor.listeners[i](item, null, $v.COLLECTION_ITEM_ADDED, index) === false) {
@@ -284,6 +316,7 @@ $v.array = function (initialValue) {
      * @param {int} index
      */
     arrayAccessor.remove = function (index) {
+        $v.AccessorMonitors.invoke(arrayAccessor);
         if ((typeof arrayAccessor.currentValue[arguments[0]]) == "undefined") {
             throw "Array element " + arguments[0] + " doesn't exist";
         } else {
@@ -365,6 +398,7 @@ $v.hashMap = function (initialValue) {
      * @returns {bool}
      */
     hashMapAccessor.hasKey = function (key) {
+        $v.AccessorMonitors.invoke(hashMapAccessor);
         return hashMapAccessor.currentValue.hasOwnProperty(key);
     };
 
@@ -375,6 +409,7 @@ $v.hashMap = function (initialValue) {
      * @returns {Array}
      */
     hashMapAccessor.getKeys = function () {
+        $v.AccessorMonitors.invoke(hashMapAccessor);
         return Object.keys(hashMapAccessor.currentValue);
     };
 
@@ -385,6 +420,7 @@ $v.hashMap = function (initialValue) {
      * @param {Mixed} key
      */
     hashMapAccessor.remove = function (key) {
+        $v.AccessorMonitors.invoke(hashMapAccessor);
         if (!hashMapAccessor.hasKey(key)) {
             throw "HashMap element " + key + " doesn't exist";
         }

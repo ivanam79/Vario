@@ -26,5 +26,36 @@
 
 (function(node, scriptIndex, useInnerHTML) {
     //console.log("script: " + node.innerHTML);
+    var tc = $v.templateCompiler;
+    if(!tc.components.script) {
+        tc.components.script = { 
+            active: true
+        };            
+        
+        var _initFunction = function() {
+            // Init script component
+            if( (typeof scriptAccessorMonitor) == "undefined") {
+                var scriptAccessors = {};
+                var suppressScriptAccessorsFlag = false;
+                var scriptAccessorMonitor = function(accessor) {
+                    if(!suppressScriptAccessorsFlag) {
+                        scriptAccessors[accessor.id] = accessor;
+                    }
+                };
+                $v.AccessorMonitors.add(scriptAccessorMonitor);
+            }
+        };
+        
+        var _cleanupFunction = function() {
+            // Cleanup script component
+            $v.AccessorMonitors.remove(scriptAccessorMonitor);
+        };
+        
+        tc.emitJavaScriptFunctionBody(_initFunction, scriptIndex);
+        tc.currentBlockCleanupFunctions.push(function() {
+            delete tc.components.script;
+            tc.emitJavaScriptFunctionBody(_cleanupFunction, scriptIndex);
+        });        
+    }
     $v.templateCompiler.emitJavaScriptCode(node.innerHTML, scriptIndex);
 })(node, scriptIndex, useInnerHTML);
